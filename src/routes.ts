@@ -1,5 +1,5 @@
 import { Application } from "express";
-import UsersController from "./controllers/UsersController";
+import CarsController from "./controllers/CarsController";
 import { Router } from "./helpers/Router";
 
 export function setupRoutes(app: Application) {
@@ -13,11 +13,9 @@ export function setupRoutes(app: Application) {
     });
   });
 
-  router.group("/users", (router) => {
-    router.get("/", UsersController.index);
-    router.get("/:id", UsersController.show);
-    router.post("/", UsersController.create);
-    router.put("/:id", UsersController.update);
-    router.delete("/:id", UsersController.delete);
+  router.group("/cars", (router) => {
+    router.get("/", CarsController.index);
+    router.get("/:id", CarsController.show);
+    router.post("/", CarsController.create);
   });
 }

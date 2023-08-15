@@ -12,7 +12,14 @@ datasource db {
 
 model Car {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  name String?
+  make String
+  model String
+  package String
+  color String
+  category String
+  mileage Float       
+  price Float
+  year Int          
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
