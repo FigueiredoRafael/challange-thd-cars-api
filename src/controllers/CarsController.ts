@@ -59,7 +59,6 @@ class CarsController {
 
   static async show(req: Request, res: Response) {
     try {
-      const payload = req.body;
 
       const car = await prisma.car.findFirst({
         where: {
@@ -67,7 +66,11 @@ class CarsController {
         },
       });
 
-      return res.json({ success: true, data: car });
+      if (car) {
+        return res.json({ success: true, data: car });
+      } else {
+        return res.status(404).json({ success: false, msg: "Car not found" });
+      }
     } catch (error) {
       console.log(error);
       return res
