@@ -31,6 +31,40 @@ Replace the placeholders (`your-username`, `your-password`, `your-atlas-cluster-
 ## Configuration
 To modify the application's behavior, consider checking out morgan.js for logging customization.
 
+## ROUTES
+
+These are the important requested routes
+
+  router.group("/cars", (router) => {
+    router.get("/", CarsController.index);
+    router.get("/:id", CarsController.show);
+    router.post("/", CarsController.create);
+  });
+
+WITH GET
+  ```bash
+  http://baseApiURL/cars #will get all cars
+  http://baseApiURL/:id #will get one car detail
+  ```
+
+WITH POST
+```
+http://baseApiURL/
+```
+To register the user here is an example of the expected data
+
+```
+        data: {
+          make: payload.make,
+          model: payload.model,
+          package: payload.package,
+          color: payload.color,
+          category: payload.category,
+          mileage: Number(payload.mileage),
+          price: Number(payload.price),
+          year: Number(payload.year),
+        },
+```
 
 ## Testing
 
