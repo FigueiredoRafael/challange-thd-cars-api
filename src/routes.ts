@@ -8,7 +8,7 @@ export function setupRoutes(app: Application) {
   router.group("/api", (router) => {
     router.group("/v1", (router) => {
       router.get("/", (req, res) => {
-        return { status: "ok", message: "Working!" };
+        res.status(200).json({ status: "ok", message: "Working!" });
       });
     });
   });

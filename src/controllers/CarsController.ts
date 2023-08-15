@@ -38,9 +38,9 @@ class CarsController {
           package: payload.package,
           color: payload.color,
           category: payload.category,
-          mileage: payload.mileage,
-          price: payload.price,
-          year: payload.year,
+          mileage: Number(payload.mileage),
+          price: Number(payload.price),
+          year: Number(payload.year),
         },
       });
 
