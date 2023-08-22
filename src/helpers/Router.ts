@@ -1,16 +1,60 @@
-import { Application, Request, Response, NextFunction } from "express";
+import { Application, NextFunction, Request, Response } from "express";
+import { z } from "zod";
+import { ApiError } from "../errors/ApiError";
+import { logger } from "./logger";
 
-export type Handler = (req: Request, res: Response, next: NextFunction) => Promise<any> | any;
+export type Handler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => Promise<any> | any;
+
+interface RouterProps {
+  base?: string;
+  middlewares?: Handler[];
+}
 
 export class Router {
-  constructor(public app: Application, public base: string = "") {}
+  private base: string;
+  private middlewares: Handler[];
+
+  constructor(public app: Application, props?: RouterProps) {
+    this.base = props?.base ?? "";
+    this.middlewares = props?.middlewares ?? [];
+  }
 
   public handle(handler: Handler) {
     return async (req: Request, res: Response, next: NextFunction) => {
-      const data = await handler(req, res, next);
+      try {
+        const data = await handler(req, res, next);
 
-      return data && this.isSerializable(data) ? res.json(data) : res.send();
+        return data && this.isSerializable(data) ? res.json(data) : res.send();
+      } catch (error) {
+        console.error(error);
+
+        if (error instanceof z.ZodError) {
+          return res
+            .status(400)
+            .json({ error: error.format(), success: false });
+        }
+
+        const status = error instanceof ApiError ? error.statusCode : 500;
+
+        return res
+          .status(status)
+          .json({
+            error: error instanceof Error ? error.message : error,
+            success: false,
+          });
+      }
     };
+  }
+
+  private extends({
+    base = this.base,
+    middlewares = this.middlewares,
+  }: RouterProps) {
+    return new Router(this.app, { base, middlewares });
   }
 
   public isSerializable(obj: any): boolean {
@@ -23,37 +67,46 @@ export class Router {
   }
 
   group(base: string, callback: (router: Router) => any) {
-    callback(new Router(this.app, this.base + base));
+    callback(this.extends({ base: this.base + base }));
     return this;
   }
 
   get(path: string, handler: Handler) {
-    this.app.get(this.base + path, this.handle(handler));
+    path = this.base + path;
+    logger.info(`get ${path}`);
+    this.app.get(path, ...this.middlewares, this.handle(handler));
     return this;
   }
 
   post(path: string, handler: Handler) {
-    this.app.post(this.base + path, this.handle(handler));
+    path = this.base + path;
+    logger.info(`post ${path}`);
+    this.app.post(path, ...this.middlewares, this.handle(handler));
     return this;
   }
 
   put(path: string, handler: Handler) {
-    this.app.put(this.base + path, this.handle(handler));
+    path = this.base + path;
+    logger.info(`put ${path}`);
+    this.app.put(path, ...this.middlewares, this.handle(handler));
     return this;
   }
 
   delete(path: string, handler: Handler) {
-    this.app.delete(this.base + path, this.handle(handler));
+    path = this.base + path;
+    logger.info(`delete ${path}`);
+    this.app.delete(path, ...this.middlewares, this.handle(handler));
     return this;
   }
 
   patch(path: string, handler: Handler) {
-    this.app.patch(this.base + path, this.handle(handler));
+    path = this.base + path;
+    logger.info(`patch ${path}`);
+    this.app.patch(path, ...this.middlewares, this.handle(handler));
     return this;
   }
 
   middleware(...middlewares: Handler[]) {
-    this.app.use(this.base, ...middlewares);
-    return this;
+    return this.extends({ middlewares: [...this.middlewares, ...middlewares] });
   }
 }

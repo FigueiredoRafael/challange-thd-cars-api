@@ -1,65 +1,89 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 import { Request, Response } from "express";
+import { ApiError } from "../errors/ApiError";
+import { z } from "zod";
+
+const CreateCarPayload = z.object({
+  make: z
+    .string({ required_error: "make is required" })
+    .min(6, "Make must have at least 6 digits"),
+  model: z.string({ required_error: "model is required" }),
+  package: z.string({ required_error: "package is required" }),
+  color: z
+    .string({ required_error: "color is required" })
+    .min(2, "Color must have at least 2 digits"),
+  category: z.string({ required_error: "category is required" }),
+  mileage: z
+    .string({ required_error: "mileage is required" })
+    .refine(Number, "Mileage must be number")
+    .transform(Number),
+  price: z
+    .string({ required_error: "mileage is required" })
+    .refine(Number, "Price must be number")
+    .transform(Number),
+  year: z
+    .string({ required_error: "mileage is required" })
+    .refine(Number, "Year must be number")
+    .transform(Number),
+});
+
+type CreateCarPayload = z.infer<typeof CreateCarPayload>;
 
 class CarsController {
-  static async index(req: Request, res: Response) {
+  static async index(req: Request) {
     try {
       const cars = await prisma.car.findMany();
 
       if (cars.length <= 0) {
-        return res.status(200).json({
+        return {
           success: true,
           msg: "⚠️ No cars registered! You can start by creating some.",
-        });
+        };
       }
 
-      return res.status(200).json({
+      return {
         success: true,
         msg: "✔️ cars recovered successfully!",
         data: cars,
-      });
+      };
     } catch (error) {
       console.log(error);
-      return res
-        .status(500)
-        .json({ success: false, msg: "✖️ An error occurred!" });
+      const message = error instanceof Error ? error.message : "";
+      throw new ApiError(
+        `✖️ An error occurred!: ${message}`,
+        500,
+        error as Error
+      );
     }
   }
 
-  static async create(req: Request, res: Response) {
-    const payload = req.body;
+  static async create(req: Request) {
+    const payload = CreateCarPayload.parse(req.body);
 
     try {
       const car = await prisma.car.create({
-        data: {
-          make: payload.make,
-          model: payload.model,
-          package: payload.package,
-          color: payload.color,
-          category: payload.category,
-          mileage: Number(payload.mileage),
-          price: Number(payload.price),
-          year: Number(payload.year),
-        },
+        data: payload,
       });
 
-      return res.status(200).json({
+      return {
         success: true,
         msg: "✔️ Car created successfully!",
         data: car,
-      });
+      };
     } catch (error) {
       console.log(error);
-      return res
-        .status(500)
-        .json({ success: false, msg: "✖️ An error occurred!" });
+      const message = error instanceof Error ? error.message : "";
+      throw new ApiError(
+        `✖️ An error occurred!: ${message}`,
+        500,
+        error as Error
+      );
     }
   }
 
-  static async show(req: Request, res: Response) {
+  static async show(req: Request) {
     try {
-
       const car = await prisma.car.findFirst({
         where: {
           id: req.params.id,
@@ -67,15 +91,18 @@ class CarsController {
       });
 
       if (car) {
-        return res.json({ success: true, data: car });
+        return { success: true, data: car };
       } else {
-        return res.status(404).json({ success: false, msg: "Car not found" });
+        throw new ApiError("Car not found", 404);
       }
     } catch (error) {
       console.log(error);
-      return res
-        .status(500)
-        .json({ success: false, msg: "✖️ An error occurred!" });
+      const message = error instanceof Error ? error.message : "";
+      throw new ApiError(
+        `✖️ An error occurred!: ${message}`,
+        500,
+        error as Error
+      );
     }
   }
 }
