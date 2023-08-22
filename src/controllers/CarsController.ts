@@ -7,12 +7,12 @@ import { z } from "zod";
 const CreateCarPayload = z.object({
   make: z
     .string({ required_error: "make is required" })
-    .min(6, "Make must have at least 6 digits"),
+    .min(1, "Make must have at least 1 digits"),
   model: z.string({ required_error: "model is required" }),
   package: z.string({ required_error: "package is required" }),
   color: z
     .string({ required_error: "color is required" })
-    .min(2, "Color must have at least 2 digits"),
+    .min(1, "Color must have at least 1 digits"),
   category: z.string({ required_error: "category is required" }),
   mileage: z
     .string({ required_error: "mileage is required" })
@@ -31,7 +31,7 @@ const CreateCarPayload = z.object({
 type CreateCarPayload = z.infer<typeof CreateCarPayload>;
 
 class CarsController {
-  static async index(req: Request) {
+  static async index() {
     try {
       const cars = await prisma.car.findMany();
 
